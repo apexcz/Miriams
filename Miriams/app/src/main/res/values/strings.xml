@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Miriams</string>
+    <string name="action_settings">Settings</string>
+    <string name="poor_network">Internet connection not available</string>
+    <string name="error_message">Sorry an error occurred</string>
+    <string name="title_detail_list">Details</string>
+    <string name="title_detail_detail">Detail Detail</string>
+</resources>
