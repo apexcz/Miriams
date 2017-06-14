@@ -13,8 +13,8 @@ import com.example.chineduoty.miriams.dummy.DummyContent;
 
 /**
  * A fragment representing a single Detail detail screen.
- * This fragment is either contained in a {@link RecipeListActivity}
- * in two-pane mode (on tablets) or a {@link RecipeDetailActivity}
+ * This fragment is either contained in a {@link RecipeDetailActivity}
+ * in two-pane mode (on tablets) or a {@link StepDetailActivity}
  * on handsets.
  */
 public class RecipeDetailFragment extends Fragment {

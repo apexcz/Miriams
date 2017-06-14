@@ -23,7 +23,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".RecipeListActivity"
+            android:name=".RecipeDetailActivity"
             android:label="@string/title_detail_list"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
@@ -32,13 +32,13 @@
                 android:value="com.example.chineduoty.miriams.MainActivity" />
         </activity>
         <activity
-            android:name=".RecipeDetailActivity"
+            android:name=".StepDetailActivity"
             android:label="@string/title_detail_detail"
-            android:parentActivityName=".RecipeListActivity"
+            android:parentActivityName=".RecipeDetailActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.chineduoty.miriams.RecipeListActivity" />
+                android:value="com.example.chineduoty.miriams.RecipeDetailActivity" />
         </activity>
     </application>
 

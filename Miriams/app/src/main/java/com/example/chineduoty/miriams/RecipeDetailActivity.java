@@ -1,66 +1,116 @@
 package com.example.chineduoty.miriams;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.ActionBar;
+import android.widget.AdapterView;
+import android.widget.GridView;
 import android.support.v4.app.NavUtils;
+import android.support.v7.app.ActionBar;
 import android.view.MenuItem;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.chineduoty.miriams.adapter.IngredientsAdapter;
+import com.example.chineduoty.miriams.adapter.StepsAdapter;
+import com.example.chineduoty.miriams.model.Recipe;
+import com.example.chineduoty.miriams.model.Step;
+import com.google.gson.Gson;
 
 /**
- * An activity representing a single Detail detail screen. This
- * activity is only used narrow width devices. On tablet-size devices,
- * item details are presented side-by-side with a list of items
- * in a {@link RecipeListActivity}.
+ * An activity representing a list of Details. This activity
+ * has different presentations for handset and tablet-size devices. On
+ * handsets, the activity presents a list of items, which when touched,
+ * lead to a {@link StepDetailActivity} representing
+ * item details. On tablets, the activity presents the list of items and
+ * item details side-by-side using two vertical panes.
  */
-public class RecipeDetailActivity extends AppCompatActivity {
+public class RecipeDetailActivity extends AppCompatActivity implements StepsAdapter.StepAdapterClickHandler {
+
+    /**
+     * Whether or not the activity is in two-pane mode, i.e. running on a tablet
+     * device.
+     */
+    private boolean mTwoPane;
+    private static final String TAG = RecipeDetailActivity.class.getSimpleName();
+    private RecyclerView ingredientRecyclerView;
+    private IngredientsAdapter ingredientsAdapter;
+    private RecyclerView stepRecyclerView;
+    private StepsAdapter stepsAdapter;
+    private Recipe recipe;
+    private Gson gson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_detail_detail);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
+
+        gson = new Gson();
+        Intent intent = getIntent();
+        if(intent.resolveActivity(getPackageManager()) != null && intent.hasExtra(Intent.EXTRA_TEXT)){
+            recipe = gson.fromJson(intent.getStringExtra(Intent.EXTRA_TEXT),Recipe.class);
+        }else {
+            Log.e(TAG,"Recipe not found");
+            return;
+        }
+
+        setContentView(R.layout.activity_recipe_detail);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        toolbar.setTitle("Cream Crackers");
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
-
         // Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // savedInstanceState is non-null when there is fragment state
-        // saved from previous configurations of this activity
-        // (e.g. when rotating the screen from portrait to landscape).
-        // In this case, the fragment will automatically be re-added
-        // to its container so we don't need to manually add it.
-        // For more information, see the Fragments API guide at:
-        //
-        // http://developer.android.com/guide/components/fragments.html
-        //
-        if (savedInstanceState == null) {
-            // Create the detail fragment and add it to the activity
-            // using a fragment transaction.
-            Bundle arguments = new Bundle();
-            arguments.putString(RecipeDetailFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(RecipeDetailFragment.ARG_ITEM_ID));
-            RecipeDetailFragment fragment = new RecipeDetailFragment();
-            fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.detail_detail_container, fragment)
-                    .commit();
+        TextView recipeName = (TextView)findViewById(R.id.recipe_name_text);
+        TextView recipeServing  = (TextView)findViewById(R.id.recipe_serving_text);
+
+        ingredientRecyclerView = (RecyclerView) findViewById(R.id.ingredient_rv);
+
+        int orientation = getResources().getConfiguration().orientation;
+        if(orientation == Configuration.ORIENTATION_PORTRAIT){
+            ingredientRecyclerView.setLayoutManager(new GridLayoutManager(this,3));
+        }else {
+            ingredientRecyclerView.setLayoutManager(new GridLayoutManager(this,5));
+        }
+
+        ingredientsAdapter = new IngredientsAdapter(this,recipe.getIngredients());
+        ingredientRecyclerView.setAdapter(ingredientsAdapter);
+
+        stepRecyclerView = (RecyclerView)findViewById(R.id.steps_rv);
+        stepRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        stepsAdapter = new StepsAdapter(this,recipe.getSteps(),RecipeDetailActivity.this);
+        stepRecyclerView.setAdapter(stepsAdapter);
+
+        recipeName.setText(recipe.getName());
+        recipeServing.setText(""+recipe.getServings());
+
+        if (findViewById(R.id.step_detail_container) != null) {
+            // The detail container view will be present only in the
+            // large-screen layouts (res/values-w900dp).
+            // If this view is present, then the
+            // activity should be in two-pane mode.
+            mTwoPane = true;
         }
     }
 
@@ -75,9 +125,30 @@ public class RecipeDetailActivity extends AppCompatActivity {
             //
             // http://developer.android.com/design/patterns/navigation.html#up-vs-back
             //
-            NavUtils.navigateUpTo(this, new Intent(this, RecipeListActivity.class));
+            NavUtils.navigateUpFromSameTask(this);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public void onClick(Step step) {
+        Toast.makeText(RecipeDetailActivity.this,"Step = " + step.getId(),Toast.LENGTH_LONG).show();
+
+        if (mTwoPane) {
+            Bundle arguments = new Bundle();
+            arguments.putString(RecipeDetailFragment.ARG_ITEM_ID,"1");
+            RecipeDetailFragment fragment = new RecipeDetailFragment();
+            fragment.setArguments(arguments);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.step_detail_container, fragment)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, StepDetailActivity.class);
+            intent.putExtra(RecipeDetailFragment.ARG_ITEM_ID, "1");
+
+            startActivity(intent);
+        }
+    }
+
 }
