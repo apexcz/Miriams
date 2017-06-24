@@ -42,7 +42,10 @@ public class StepsAdapter extends RecyclerView.Adapter<StepsAdapter.StepsViewHol
 
         holder.textStepCount.setText(""+ (position + 1));
         holder.textStepTitle.setText(step.getShortDescription());
-        holder.textStepDescription.setText(step.getDescription());
+
+        int dotIndex = step.getDescription().indexOf(".");
+        String withoutNumbering = (dotIndex == -1) ? step.getDescription() : step.getDescription().substring(dotIndex + 2);
+        holder.textStepDescription.setText(withoutNumbering);
 
 
     }
@@ -76,12 +79,12 @@ public class StepsAdapter extends RecyclerView.Adapter<StepsAdapter.StepsViewHol
         @Override
         public void onClick(View view) {
             int itemPosition = getAdapterPosition();
-            Step step = lstSteps.get(itemPosition);
-            clickHandler.onClick(step);
+            //Step step = lstSteps.get(itemPosition);
+            clickHandler.onClick(itemPosition);
         }
     }
 
     public interface StepAdapterClickHandler{
-        void onClick(Step step);
+        void onClick(int position);
     }
 }

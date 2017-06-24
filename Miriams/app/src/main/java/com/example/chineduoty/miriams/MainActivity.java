@@ -1,6 +1,8 @@
 package com.example.chineduoty.miriams;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -35,7 +37,7 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements RecipeAdapter.RecipeAdapterOnClickHandler {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String RECIPE_LIST_KEY = "recipes list";
+    public static final String RECIPE_LIST_KEY = "recipes list";
 
     private List<Recipe> recipeList;
     private ApiInterface apiService;
@@ -129,7 +131,16 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
                 recipeList = response.body();
                 recipeAdapter.updateRecipes(recipeList);
                 loaderRecipe.setVisibility(View.INVISIBLE);
+
+                //Save recipe list in a file
+                SharedPreferences sharedPref = getSharedPreferences(
+                        getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(MainActivity.RECIPE_LIST_KEY, gson.toJson(recipeList));
+                editor.commit();
+
                 showRecipe();
+
             }
 
             @Override

@@ -40,6 +40,19 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.chineduoty.miriams.RecipeDetailActivity" />
         </activity>
+
+        <receiver android:name=".MiriamsWidgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/miriams_widget_info" />
+        </receiver>
+
+        <service android:name=".services.MiriamsRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"></service>
     </application>
 
 </manifest>

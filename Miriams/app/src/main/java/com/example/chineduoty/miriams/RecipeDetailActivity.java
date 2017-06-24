@@ -12,8 +12,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.GridView;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.view.MenuItem;
@@ -25,6 +23,9 @@ import com.example.chineduoty.miriams.adapter.StepsAdapter;
 import com.example.chineduoty.miriams.model.Recipe;
 import com.example.chineduoty.miriams.model.Step;
 import com.google.gson.Gson;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An activity representing a list of Details. This activity
@@ -42,18 +43,22 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
      */
     private boolean mTwoPane;
     private static final String TAG = RecipeDetailActivity.class.getSimpleName();
+    public static final String STEP_KEY = "step";
     private RecyclerView ingredientRecyclerView;
     private IngredientsAdapter ingredientsAdapter;
     private RecyclerView stepRecyclerView;
     private StepsAdapter stepsAdapter;
     private Recipe recipe;
     private Gson gson;
+    private List<Step> lstStep;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         gson = new Gson();
+        lstStep = new ArrayList<Step>();
+
         Intent intent = getIntent();
         if(intent.resolveActivity(getPackageManager()) != null && intent.hasExtra(Intent.EXTRA_TEXT)){
             recipe = gson.fromJson(intent.getStringExtra(Intent.EXTRA_TEXT),Recipe.class);
@@ -66,7 +71,7 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Cream Crackers");
+        getSupportActionBar().setTitle(recipe.getName());
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -99,7 +104,8 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
 
         stepRecyclerView = (RecyclerView)findViewById(R.id.steps_rv);
         stepRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        stepsAdapter = new StepsAdapter(this,recipe.getSteps(),RecipeDetailActivity.this);
+        lstStep = recipe.getSteps();
+        stepsAdapter = new StepsAdapter(this,lstStep,RecipeDetailActivity.this);
         stepRecyclerView.setAdapter(stepsAdapter);
 
         recipeName.setText(recipe.getName());
@@ -132,21 +138,25 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
     }
 
     @Override
-    public void onClick(Step step) {
-        Toast.makeText(RecipeDetailActivity.this,"Step = " + step.getId(),Toast.LENGTH_LONG).show();
+    public void onClick(int position) {
+        //Toast.makeText(RecipeDetailActivity.this,"Step = " + step.getId(),Toast.LENGTH_LONG).show();
 
         if (mTwoPane) {
             Bundle arguments = new Bundle();
-            arguments.putString(RecipeDetailFragment.ARG_ITEM_ID,"1");
-            RecipeDetailFragment fragment = new RecipeDetailFragment();
+            arguments.putString(StepDetailFragment.ARG_ITEM_ID,""+position);
+            StepDetailFragment fragment = new StepDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.step_detail_container, fragment)
                     .commit();
         } else {
             Intent intent = new Intent(this, StepDetailActivity.class);
-            intent.putExtra(RecipeDetailFragment.ARG_ITEM_ID, "1");
+            intent.putExtra(StepDetailFragment.ARG_ITEM_ID,position);
+            intent.putExtra(StepDetailFragment.RECIPE_NAME,recipe.getName());
 
+            Toast.makeText(this, "Clicked item "+position, Toast.LENGTH_LONG).show();
+            String stepString = gson.toJson(lstStep);
+            intent.putExtra(STEP_KEY,stepString);
             startActivity(intent);
         }
     }

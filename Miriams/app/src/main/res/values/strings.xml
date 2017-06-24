@@ -5,4 +5,7 @@
     <string name="error_message">Sorry an error occurred</string>
     <string name="title_detail_list">Details</string>
     <string name="title_detail_detail">Detail Detail</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="preference_file_key">Recipe Pref File</string>
 </resources>

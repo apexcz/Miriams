@@ -4,12 +4,23 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
+
+import com.example.chineduoty.miriams.adapter.StepsViewPagerAdapter;
+import com.example.chineduoty.miriams.model.Recipe;
+import com.example.chineduoty.miriams.model.Step;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An activity representing a single Detail detail screen. This
@@ -19,27 +30,31 @@ import android.view.MenuItem;
  */
 public class StepDetailActivity extends AppCompatActivity {
 
+    private ViewPager viewPager;
+    private StepsViewPagerAdapter adapter;
+    private int stepPosition;
+    private List<Step> lstStep;
+    private Gson gson;
+    private String recipeName;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_detail_detail);
+        setContentView(R.layout.activity_step_detail);
         Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         // Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
+
+        gson = new Gson();
+        lstStep = new ArrayList<Step>();
+        viewPager = (ViewPager)findViewById(R.id.steps_viewpager);
+
 
         // savedInstanceState is non-null when there is fragment state
         // saved from previous configurations of this activity
@@ -51,16 +66,23 @@ public class StepDetailActivity extends AppCompatActivity {
         // http://developer.android.com/guide/components/fragments.html
         //
         if (savedInstanceState == null) {
-            // Create the detail fragment and add it to the activity
-            // using a fragment transaction.
-            Bundle arguments = new Bundle();
-            arguments.putString(RecipeDetailFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(RecipeDetailFragment.ARG_ITEM_ID));
-            RecipeDetailFragment fragment = new RecipeDetailFragment();
-            fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.detail_detail_container, fragment)
-                    .commit();
+
+            recipeName = getIntent().getStringExtra(StepDetailFragment.RECIPE_NAME);
+            getSupportActionBar().setTitle(recipeName);
+
+            TypeToken<List<Step>> token = new TypeToken<List<Step>>(){};
+            lstStep  = gson.fromJson(getIntent().getStringExtra(RecipeDetailActivity.STEP_KEY),
+                    token.getType());
+
+            List<Fragment> lstFragment = new ArrayList<Fragment>();
+            for(int i = 0; i<lstStep.size();i++){
+                lstFragment.add(StepDetailFragment.newInstance(i,lstStep));
+            }
+            adapter = new StepsViewPagerAdapter(getSupportFragmentManager(),
+                    lstFragment,lstStep);
+            viewPager.setAdapter(adapter);
+            int itemPos = getIntent().getIntExtra(StepDetailFragment.ARG_ITEM_ID,0);
+            viewPager.setCurrentItem(itemPos);
         }
     }
 
@@ -79,5 +101,15 @@ public class StepDetailActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onPreviousClicked(){
+        viewPager.setCurrentItem((viewPager.getCurrentItem() > 0) ?
+                (viewPager.getCurrentItem() - 1) : lstStep.size());
+    }
+
+    public void onNextClicked(){
+        viewPager.setCurrentItem((viewPager.getCurrentItem() < lstStep.size()) ?
+                (viewPager.getCurrentItem() + 1) : 0);
     }
 }
