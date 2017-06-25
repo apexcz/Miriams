@@ -41,6 +41,11 @@
                 android:value="com.example.chineduoty.miriams.RecipeDetailActivity" />
         </activity>
 
+        <provider
+            android:name=".provider.RecipeContentProvider"
+            android:authorities="com.example.chineduoty.miriams"
+            android:exported="true" />
+
         <receiver android:name=".MiriamsWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

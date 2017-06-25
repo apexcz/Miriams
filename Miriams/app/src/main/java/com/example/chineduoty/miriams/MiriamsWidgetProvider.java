@@ -4,32 +4,22 @@ import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Build;
 import android.support.v4.app.TaskStackBuilder;
 import android.widget.RemoteViews;
 
+import com.example.chineduoty.miriams.provider.RecipeContract;
 import com.example.chineduoty.miriams.services.MiriamsRemoteViewsService;
 
 /**
  * Implementation of App Widget functionality.
  */
 public class MiriamsWidgetProvider extends AppWidgetProvider {
-
-//    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-//    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
-//                                int appWidgetId) {
-//
-//        CharSequence widgetText = context.getString(R.string.appwidget_text);
-//        // Construct the RemoteViews object
-//        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.miriams_widget);
-//        views.setTextViewText(R.id.appwidget_text, widgetText);
-//
-//        // Instruct the widget manager to update the widget
-//        appWidgetManager.updateAppWidget(appWidgetId, views);
-//    }
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -38,6 +28,19 @@ public class MiriamsWidgetProvider extends AppWidgetProvider {
             //updateAppWidget(context, appWidgetManager, appWidgetId);
 
             RemoteViews views = new RemoteViews(context.getPackageName(),R.layout.miriams_widget);
+
+            String[] projection = new String[] { RecipeContract.RecipeEntry.COLUMN_RECIPE_NAME};
+            Cursor cursor = context.getContentResolver().query(RecipeContract.RecipeEntry.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    null);
+            String recipeName;
+            if (cursor == null || !cursor.moveToPosition(0)) {
+                recipeName = "Miriams";
+            }
+            recipeName = cursor.getString(0);
+            views.setTextViewText(R.id.widgetTitleLabel,recipeName);
 
             Intent titleIntent = new Intent(context, MainActivity.class);
             PendingIntent titlePendingIntent = PendingIntent.getActivity(context, 0, titleIntent, 0);
@@ -49,16 +52,23 @@ public class MiriamsWidgetProvider extends AppWidgetProvider {
                     .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
             views.setPendingIntentTemplate(R.id.widgetListView, clickPendingIntentTemplate);
 
-            //Read recipe list from file
-            SharedPreferences sharedPref = context.getSharedPreferences(
-                    context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-            String recipeListString = sharedPref.getString(context.getString(R.string.preference_file_key), null);
-
             Intent intent = new Intent(context, MiriamsRemoteViewsService.class);
-            intent.putExtra(MainActivity.RECIPE_LIST_KEY, recipeListString);
             views.setRemoteAdapter(R.id.widgetListView,intent);
             appWidgetManager.updateAppWidget(appWidgetId,views);
         }
+    }
+
+    @Override
+    public void onReceive(final Context context, Intent intent) {
+        super.onReceive(context, intent);
+        final String action = intent.getAction();
+        if (action.equals(RecipeDetailActivity.ACTION_RECIPE_UPDATED)) {
+            // refresh all your widgets
+            AppWidgetManager mgr = AppWidgetManager.getInstance(context);
+            ComponentName cn = new ComponentName(context, MiriamsWidgetProvider.class);
+            mgr.notifyAppWidgetViewDataChanged(mgr.getAppWidgetIds(cn), R.id.widgetListView);
+        }
+
     }
 
     @Override

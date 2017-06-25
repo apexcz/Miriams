@@ -30,6 +30,8 @@ import com.google.gson.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -41,46 +43,52 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
 
     private List<Recipe> recipeList;
     private ApiInterface apiService;
-    private RecyclerView recyclerView;
-    private TextView textErrorMessage;
-    private ProgressBar loaderRecipe;
     private RecipeAdapter recipeAdapter;
     private Gson gson;
+
+    @BindView(R.id.toolbar)
+    Toolbar toolbar;
+    @BindView(R.id.recipe_rv)
+    RecyclerView recyclerView;
+    @BindView(R.id.error_message_text)
+    TextView textErrorMessage;
+    @BindView(R.id.recipe_loader)
+    ProgressBar loaderRecipe;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        ButterKnife.bind(this);
+
         setSupportActionBar(toolbar);
 
         gson = new Gson();
 
-        recyclerView = (RecyclerView)findViewById(R.id.recipe_rv);
-        textErrorMessage = (TextView)findViewById(R.id.error_message_text);
-        loaderRecipe = (ProgressBar)findViewById(R.id.recipe_loader);
-
-        recipeAdapter = new RecipeAdapter(MainActivity.this,null,MainActivity.this);
+        recipeAdapter = new RecipeAdapter(MainActivity.this, null, MainActivity.this);
         recyclerView.setAdapter(recipeAdapter);
 
-        ItemOffsetDecoration itemDecoration = new ItemOffsetDecoration(this,R.dimen.item_offset);
+        ItemOffsetDecoration itemDecoration = new ItemOffsetDecoration(this, R.dimen.item_offset);
         int orientation = getResources().getConfiguration().orientation;
-        if(orientation == Configuration.ORIENTATION_PORTRAIT){
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        }else {
-            recyclerView.setLayoutManager(new GridLayoutManager(this,3));
+        } else {
+            recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         }
 
         apiService = NetworkUtils.getClient().create(ApiInterface.class);
 
-        if(savedInstanceState != null && savedInstanceState.containsKey(RECIPE_LIST_KEY)
-                && savedInstanceState.getString(RECIPE_LIST_KEY) != null ){
+        if (savedInstanceState != null && savedInstanceState.containsKey(RECIPE_LIST_KEY)
+                && savedInstanceState.getString(RECIPE_LIST_KEY) != null) {
 
-            TypeToken<List<Recipe>> token = new TypeToken<List<Recipe>>(){};
-            List<Recipe> savedRecipes = gson.fromJson(savedInstanceState.getString(RECIPE_LIST_KEY),
+            TypeToken<List<Recipe>> token = new TypeToken<List<Recipe>>() {
+            };
+            recipeList = gson.fromJson(savedInstanceState.getString(RECIPE_LIST_KEY),
                     token.getType());
-            recipeAdapter.updateRecipes(savedRecipes);
-        }else {
+            recipeAdapter.updateRecipes(recipeList);
+            showRecipe();
+        } else {
             recipeList = new ArrayList<Recipe>();
             loadRecipes();
         }
@@ -90,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         String recipeListString = gson.toJson(recipeList);
-        outState.putString(RECIPE_LIST_KEY,recipeListString);
+        outState.putString(RECIPE_LIST_KEY, recipeListString);
     }
 
     @Override
@@ -115,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
         return super.onOptionsItemSelected(item);
     }
 
-    private void loadRecipes(){
+    private void loadRecipes() {
 
         if (!BaseUtils.isOnline(this)) {
             Toast.makeText(this, getString(R.string.poor_network), Toast.LENGTH_LONG).show();
@@ -137,15 +145,14 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
                         getString(R.string.preference_file_key), Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString(MainActivity.RECIPE_LIST_KEY, gson.toJson(recipeList));
-                editor.commit();
+                editor.apply();
 
                 showRecipe();
-
             }
 
             @Override
             public void onFailure(Call<List<Recipe>> call, Throwable t) {
-                Log.e(TAG,t.getMessage());
+                Log.e(TAG, t.getMessage());
                 call.cancel();
                 loaderRecipe.setVisibility(View.INVISIBLE);
                 showError();
@@ -165,9 +172,9 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
 
     @Override
     public void onClick(Recipe recipe) {
-        Intent intent = new Intent(MainActivity.this,RecipeDetailActivity.class);
+        Intent intent = new Intent(MainActivity.this, RecipeDetailActivity.class);
         String recipeString = gson.toJson(recipe);
-        intent.putExtra(Intent.EXTRA_TEXT,recipeString);
+        intent.putExtra(Intent.EXTRA_TEXT, recipeString);
         startActivity(intent);
     }
 }

@@ -2,6 +2,7 @@ package com.example.chineduoty.miriams.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Binder;
 import android.widget.AdapterView;
 import android.widget.RemoteViews;
@@ -11,6 +12,7 @@ import com.example.chineduoty.miriams.MainActivity;
 import com.example.chineduoty.miriams.R;
 import com.example.chineduoty.miriams.model.Ingredient;
 import com.example.chineduoty.miriams.model.Recipe;
+import com.example.chineduoty.miriams.provider.RecipeContract;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -24,16 +26,12 @@ import java.util.Random;
 public class MiriamsRemoteViewsFactory implements RemoteViewsService.RemoteViewsFactory {
 
     private Context mContext;
-    private List<Recipe> lstRecipe;
-    private List<Ingredient> lstIngredients;
+    private Cursor cursor;
+
 
 
     public MiriamsRemoteViewsFactory(Context applicationContext, Intent intent) {
         mContext = applicationContext;
-        Gson gson = new Gson();
-        TypeToken<List<Recipe>> token = new TypeToken<List<Recipe>>(){};
-        lstRecipe = gson.fromJson(intent.getStringExtra(MainActivity.RECIPE_LIST_KEY),
-                token.getType());
     }
 
     @Override
@@ -43,36 +41,46 @@ public class MiriamsRemoteViewsFactory implements RemoteViewsService.RemoteViews
 
     @Override
     public void onDataSetChanged() {
+        if (cursor != null) {
+            cursor.close();
+        }
         final long identityToken = Binder.clearCallingIdentity();
-        Random random = new Random();
-        int item = random.nextInt(lstRecipe.size());
-        lstIngredients = lstRecipe.get(item).getIngredients();
+        String[] projection = new String[] { RecipeContract.RecipeEntry.COLUMN_INGREDIENT_NAME};
+
+        cursor = mContext.getContentResolver().query(RecipeContract.RecipeEntry.CONTENT_URI,
+                projection,
+                null,
+                null,
+                null);
         Binder.restoreCallingIdentity(identityToken);
     }
 
     @Override
     public void onDestroy() {
+        if (cursor != null) {
+            cursor.close();
+            cursor = null;
+        }
 
     }
 
     @Override
     public int getCount() {
-        if (lstIngredients == null)
-            return 0;
-
-        return lstIngredients.size();
-
+        return cursor == null ? 0 : cursor.getCount();
     }
 
     @Override
     public RemoteViews getViewAt(int i) {
-        if (i == AdapterView.INVALID_POSITION || lstIngredients == null || i > lstIngredients.size())
+        if (i == AdapterView.INVALID_POSITION ||
+                cursor == null || !cursor.moveToPosition(i)) {
             return null;
+        }
 
         RemoteViews rv = new RemoteViews(mContext.getPackageName(),
                 R.layout.collection_widget_list_item);
 
-        rv.setTextViewText(R.id.widgetItemTaskNameLabel, lstIngredients.get(i).getIngredient());
+        rv.setTextViewText(R.id.widgetItemTaskNameLabel,
+                cursor.getString(0));
 
         return rv;
     }

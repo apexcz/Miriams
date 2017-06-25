@@ -28,7 +28,7 @@ public class MainActivityTest  {
     public ActivityTestRule<MainActivity> mActivityRule = new ActivityTestRule(MainActivity.class);
 
     @Test
-    public static void clickRecipeItems_OpensRecipeDetailActivity(){
+    public void clickRecipeItems_OpensRecipeDetailActivity(){
         onData(anything()).inAdapterView(withId(R.id.recipe_rv)).atPosition(1).perform(click());
 
         //Checks that the details activity shows the servings of the recipe

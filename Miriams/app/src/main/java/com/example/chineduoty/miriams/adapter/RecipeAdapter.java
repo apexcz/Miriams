@@ -12,6 +12,9 @@ import com.example.chineduoty.miriams.model.Recipe;
 
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 /**
  * Created by chineduoty on 6/12/17.
  */
@@ -55,11 +58,12 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     public class RecipeViewHolder extends RecyclerView.ViewHolder
     implements View.OnClickListener{
 
-        public final TextView name;
+        @BindView(R.id.recipe_name_text)
+        TextView name;
 
         public RecipeViewHolder(View view){
             super(view);
-            name = (TextView)view.findViewById(R.id.recipe_name_text);
+            ButterKnife.bind(this,view);
             view.setOnClickListener(this);
         }
 

@@ -36,7 +36,7 @@ public class RecipeDetailActivityTest {
     }
 
     @Test
-    public static void clickStepItems_OpensStepDetailFragment(){
+    public void clickStepItems_OpensStepDetailFragment(){
         onData(anything()).inAdapterView(withId(R.id.steps_rv)).atPosition(1).perform(click());
 
         //Checks that the details activity shows the servings of the recipe
