@@ -10,6 +10,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -28,6 +29,8 @@ import android.widget.Toast;
 
 import com.example.chineduoty.miriams.adapter.IngredientsAdapter;
 import com.example.chineduoty.miriams.adapter.StepsAdapter;
+import com.example.chineduoty.miriams.fragment.MasterListFragment;
+import com.example.chineduoty.miriams.fragment.StepFragment;
 import com.example.chineduoty.miriams.model.Ingredient;
 import com.example.chineduoty.miriams.model.Recipe;
 import com.example.chineduoty.miriams.model.Step;
@@ -48,42 +51,29 @@ import butterknife.ButterKnife;
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  */
-public class RecipeDetailActivity extends AppCompatActivity implements StepsAdapter.StepAdapterClickHandler {
+public class RecipeDetailActivity extends AppCompatActivity implements
+        MasterListFragment.OnStepItemClickListener{
 
     private boolean mTwoPane;
     private static final String TAG = RecipeDetailActivity.class.getSimpleName();
-    public static final String STEP_KEY = "step";
+    public static final String RECIPE_NAME  = "recipe";
     public static final String ACTION_RECIPE_UPDATED =
             "com.example.chineduoty.miriams.ACTION_RECIPE_UPDATED";
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
-    @BindView(R.id.recipe_name_text)
-    TextView recipeName;
-    @BindView(R.id.recipe_serving_text)
-    TextView recipeServing;
-    @BindView(R.id.ingredient_rv)
-    RecyclerView ingredientRecyclerView;
     @BindView(R.id.bookmark_btn)
     FloatingActionButton fabBookmark;
 
-    private IngredientsAdapter ingredientsAdapter;
-    private RecyclerView stepRecyclerView;
-    private StepsAdapter stepsAdapter;
     private Recipe recipe;
-    private Gson gson;
-    private List<Step> lstStep;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        gson = new Gson();
-        lstStep = new ArrayList<Step>();
-
         Intent intent = getIntent();
         if (intent.resolveActivity(getPackageManager()) != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-            recipe = gson.fromJson(intent.getStringExtra(Intent.EXTRA_TEXT), Recipe.class);
+            recipe = intent.getParcelableExtra(Intent.EXTRA_TEXT);
         } else {
             Log.e(TAG, "Recipe not found");
             return;
@@ -100,28 +90,8 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        int orientation = getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            ingredientRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        } else {
-            ingredientRecyclerView.setLayoutManager(new GridLayoutManager(this, 5));
-        }
+        mTwoPane = getResources().getBoolean(R.bool.isTablet);
 
-        ingredientsAdapter = new IngredientsAdapter(this, recipe.getIngredients());
-        ingredientRecyclerView.setAdapter(ingredientsAdapter);
-
-        stepRecyclerView = (RecyclerView) findViewById(R.id.steps_rv);
-        stepRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        lstStep = recipe.getSteps();
-        stepsAdapter = new StepsAdapter(this, lstStep, RecipeDetailActivity.this);
-        stepRecyclerView.setAdapter(stepsAdapter);
-
-        recipeName.setText(recipe.getName());
-        recipeServing.setText("" + recipe.getServings());
-
-        if (findViewById(R.id.step_detail_container) != null) {
-            mTwoPane = true;
-        }
 
         if (isBookmarked()) {
             fabBookmark.setImageDrawable(ActivityCompat.getDrawable(this, R.drawable.ic_bookmark_brown_24dp));
@@ -180,29 +150,6 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onClick(int position) {
-
-        if (mTwoPane) {
-            Bundle arguments = new Bundle();
-            arguments.putString(StepDetailFragment.ARG_ITEM_ID, "" + position);
-            StepDetailFragment fragment = StepDetailFragment.newInstance(position, recipe.getSteps());
-            fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.step_detail_container, fragment)
-                    .commit();
-        } else {
-            Intent intent = new Intent(this, StepDetailActivity.class);
-            intent.putExtra(StepDetailFragment.ARG_ITEM_ID, position);
-            intent.putExtra(StepDetailFragment.RECIPE_NAME, recipe.getName());
-
-            Toast.makeText(this, "Clicked item " + position, Toast.LENGTH_LONG).show();
-            String stepString = gson.toJson(lstStep);
-            intent.putExtra(STEP_KEY, stepString);
-            startActivity(intent);
-        }
-    }
-
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private boolean isBookmarked() {
         String[] projection = new String[]{RecipeContract.RecipeEntry.COLUMN_RECIPE_ID};
@@ -224,5 +171,25 @@ public class RecipeDetailActivity extends AppCompatActivity implements StepsAdap
         context.sendBroadcast(intent);
     }
 
+    @Override
+    public void onStepClicked(int position) {
+        if (mTwoPane) {
+            Bundle arguments = new Bundle();
+            //StepDetailFragment fragment = new StepDetailFragment().newInstance(position, (ArrayList<Step>) recipe.getSteps());
+            StepFragment stepFragment = new StepFragment();
+            arguments.putInt(StepFragment.STEP_INDEX,position);
+            arguments.putParcelableArrayList(StepFragment.STEP_LIST,(ArrayList<Step>) recipe.getSteps());
+            stepFragment.setArguments(arguments);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.step_detail_container, stepFragment)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, StepDetailActivity.class);
+            intent.putExtra(StepFragment.STEP_INDEX, position);
+            intent.putExtra(StepFragment.STEP_LIST, (ArrayList<Step>) recipe.getSteps());
+            intent.putExtra(RecipeDetailActivity.RECIPE_NAME, recipe.getName());
+            startActivity(intent);
+        }
+    }
 }
 

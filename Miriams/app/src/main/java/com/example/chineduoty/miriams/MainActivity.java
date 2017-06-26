@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 
 import com.example.chineduoty.miriams.adapter.ItemOffsetDecoration;
 import com.example.chineduoty.miriams.adapter.RecipeAdapter;
+import com.example.chineduoty.miriams.fragment.MasterListFragment;
 import com.example.chineduoty.miriams.model.Recipe;
 import com.example.chineduoty.miriams.utilities.ApiInterface;
 import com.example.chineduoty.miriams.utilities.BaseUtils;
@@ -44,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
     private List<Recipe> recipeList;
     private ApiInterface apiService;
     private RecipeAdapter recipeAdapter;
-    private Gson gson;
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
@@ -64,8 +65,6 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
 
         setSupportActionBar(toolbar);
 
-        gson = new Gson();
-
         recipeAdapter = new RecipeAdapter(MainActivity.this, null, MainActivity.this);
         recyclerView.setAdapter(recipeAdapter);
 
@@ -82,10 +81,7 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
         if (savedInstanceState != null && savedInstanceState.containsKey(RECIPE_LIST_KEY)
                 && savedInstanceState.getString(RECIPE_LIST_KEY) != null) {
 
-            TypeToken<List<Recipe>> token = new TypeToken<List<Recipe>>() {
-            };
-            recipeList = gson.fromJson(savedInstanceState.getString(RECIPE_LIST_KEY),
-                    token.getType());
+            recipeList = savedInstanceState.getParcelableArrayList(RECIPE_LIST_KEY);
             recipeAdapter.updateRecipes(recipeList);
             showRecipe();
         } else {
@@ -97,8 +93,7 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        String recipeListString = gson.toJson(recipeList);
-        outState.putString(RECIPE_LIST_KEY, recipeListString);
+        outState.putParcelableArrayList(RECIPE_LIST_KEY, (ArrayList<Recipe>) recipeList);
     }
 
     @Override
@@ -140,13 +135,6 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
                 recipeAdapter.updateRecipes(recipeList);
                 loaderRecipe.setVisibility(View.INVISIBLE);
 
-                //Save recipe list in a file
-                SharedPreferences sharedPref = getSharedPreferences(
-                        getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(MainActivity.RECIPE_LIST_KEY, gson.toJson(recipeList));
-                editor.apply();
-
                 showRecipe();
             }
 
@@ -173,8 +161,7 @@ public class MainActivity extends AppCompatActivity implements RecipeAdapter.Rec
     @Override
     public void onClick(Recipe recipe) {
         Intent intent = new Intent(MainActivity.this, RecipeDetailActivity.class);
-        String recipeString = gson.toJson(recipe);
-        intent.putExtra(Intent.EXTRA_TEXT, recipeString);
+        intent.putExtra(Intent.EXTRA_TEXT, recipe);
         startActivity(intent);
     }
 }

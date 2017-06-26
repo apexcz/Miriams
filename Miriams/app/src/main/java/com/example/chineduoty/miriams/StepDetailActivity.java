@@ -2,9 +2,11 @@ package com.example.chineduoty.miriams;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -14,6 +16,7 @@ import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
 import com.example.chineduoty.miriams.adapter.StepsViewPagerAdapter;
+import com.example.chineduoty.miriams.fragment.StepFragment;
 import com.example.chineduoty.miriams.model.Recipe;
 import com.example.chineduoty.miriams.model.Step;
 import com.google.gson.Gson;
@@ -21,6 +24,9 @@ import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * An activity representing a single Detail detail screen. This
@@ -30,60 +36,39 @@ import java.util.List;
  */
 public class StepDetailActivity extends AppCompatActivity {
 
-    private ViewPager viewPager;
-    private StepsViewPagerAdapter adapter;
-    private int stepPosition;
-    private List<Step> lstStep;
-    private Gson gson;
-    private String recipeName;
+    @BindView(R.id.toolbar)
+    Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        String recipeName = getIntent().getStringExtra(RecipeDetailActivity.RECIPE_NAME);
+        int stepIndex = getIntent().getIntExtra(StepFragment.STEP_INDEX, 0);
+        List<Step> lstStep = getIntent().getParcelableArrayListExtra(StepFragment.STEP_LIST);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_step_detail);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
+
+        ButterKnife.bind(this);
+
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(recipeName);
 
-
-        // Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        gson = new Gson();
-        lstStep = new ArrayList<Step>();
-        viewPager = (ViewPager)findViewById(R.id.steps_viewpager);
+        StepFragment stepFragment = new StepFragment();
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList(StepFragment.STEP_LIST, (ArrayList<Step>) lstStep);
+        bundle.putInt(StepFragment.STEP_INDEX, stepIndex);
+        stepFragment.setArguments(bundle);
 
-
-        // savedInstanceState is non-null when there is fragment state
-        // saved from previous configurations of this activity
-        // (e.g. when rotating the screen from portrait to landscape).
-        // In this case, the fragment will automatically be re-added
-        // to its container so we don't need to manually add it.
-        // For more information, see the Fragments API guide at:
-        //
-        // http://developer.android.com/guide/components/fragments.html
-        //
-        if (savedInstanceState == null) {
-
-            recipeName = getIntent().getStringExtra(StepDetailFragment.RECIPE_NAME);
-            getSupportActionBar().setTitle(recipeName);
-
-            TypeToken<List<Step>> token = new TypeToken<List<Step>>(){};
-            lstStep  = gson.fromJson(getIntent().getStringExtra(RecipeDetailActivity.STEP_KEY),
-                    token.getType());
-
-            List<Fragment> lstFragment = new ArrayList<Fragment>();
-            for(int i = 0; i<lstStep.size();i++){
-                lstFragment.add(StepDetailFragment.newInstance(i,lstStep));
-            }
-            adapter = new StepsViewPagerAdapter(getSupportFragmentManager(),
-                    lstFragment,lstStep);
-            viewPager.setAdapter(adapter);
-            int itemPos = getIntent().getIntExtra(StepDetailFragment.ARG_ITEM_ID,0);
-            viewPager.setCurrentItem(itemPos);
-        }
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.step_detail_wrapper, stepFragment)
+                .commit();
     }
 
     @Override
@@ -97,19 +82,12 @@ public class StepDetailActivity extends AppCompatActivity {
             //
             // http://developer.android.com/design/patterns/navigation.html#up-vs-back
             //
-            NavUtils.navigateUpTo(this, new Intent(this, RecipeDetailActivity.class));
+            //NavUtils.navigateUpTo(this, new Intent(this, RecipeDetailActivity.class));
+            onBackPressed();
+            //NavUtils.navigateUpFromSameTask(this);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    public void onPreviousClicked(){
-        viewPager.setCurrentItem((viewPager.getCurrentItem() > 0) ?
-                (viewPager.getCurrentItem() - 1) : lstStep.size());
-    }
-
-    public void onNextClicked(){
-        viewPager.setCurrentItem((viewPager.getCurrentItem() < lstStep.size()) ?
-                (viewPager.getCurrentItem() + 1) : 0);
-    }
 }
